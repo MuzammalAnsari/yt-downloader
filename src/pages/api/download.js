@@ -1,5 +1,6 @@
 // pages/api/download.js
 import ytdl from 'ytdl-core'; // For downloading YouTube videos
+import zlib from 'zlib'; // For compression
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -15,12 +16,13 @@ export default async function handler(req, res) {
         throw new Error('Resolution not available');
       }
 
-      // Set response headers for streaming
+      // Set response headers for chunked transfer encoding and video compression
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Content-Disposition', `attachment; filename=${info.videoDetails.title}.${selectedFormat.container}`);
+      res.setHeader('Transfer-Encoding', 'chunked');
 
-      // Stream video data to client
-      ytdl(videoLink, { format: selectedFormat }).pipe(res);
+      // Stream video data to client with compression
+      ytdl(videoLink, { format: selectedFormat }).pipe(zlib.createGzip()).pipe(res);
     } catch (error) {
       console.error('Error downloading video:', error);
       res.status(500).json({ error: 'Failed to download video' });
