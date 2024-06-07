@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import React, { useState } from 'react';
 import axios from 'axios';
@@ -31,7 +31,7 @@ const VideoDownloaderPage = () => {
       let fileName = 'downloaded_video';
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?(.+)"?/);
-        if (match.length > 1) {
+        if (match && match.length > 1) {
           fileName = match[1];
         }
       }

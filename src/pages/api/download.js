@@ -1,8 +1,5 @@
+// pages/api/download.js
 import ytdl from 'ytdl-core'; // For downloading YouTube videos
-import { pipeline } from 'stream'; // For working with streams
-import { promisify } from 'util'; // For converting callback-based functions to Promise-based
-
-const pipelineAsync = promisify(pipeline);
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -34,16 +31,8 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', selectedFormat.mimeType || 'video/mp4');
       res.setHeader('Content-Disposition', `attachment; filename="${info.videoDetails.title.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExtension}"`);
 
-      // Download video and audio streams
-      const videoStream = ytdl(videoLink, { format: selectedFormat });
-      const audioStream = ytdl(videoLink, { filter: 'audioonly' });
-
-      // Merge video and audio streams using Node.js streams
-      await pipelineAsync(videoStream, res);
-      await pipelineAsync(audioStream, res);
-
-      console.log('Streams merged successfully');
-
+      // Stream video/audio data directly to the client
+      ytdl(videoLink, { format: selectedFormat }).pipe(res);
     } catch (error) {
       console.error('Error downloading video:', error.message);
       res.status(500).json({ error: error.message });
