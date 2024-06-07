@@ -41,7 +41,7 @@ const VideoDownloaderPage = () => {
       link.click();
       document.body.removeChild(link);
 
-      setMessage('Download initiated successfully!');
+      setMessage('Downloaded successfully!');
     } catch (error) {
       setMessage('Error initiating download. Please try again.');
     } finally {
