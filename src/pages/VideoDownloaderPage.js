@@ -1,31 +1,50 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
-import axios from 'axios'; // For making HTTP requests
+import axios from 'axios';
 
 const VideoDownloaderPage = () => {
   const [videoLink, setVideoLink] = useState('');
   const [selectedOption, setSelectedOption] = useState('');
   const [format, setFormat] = useState('');
   const [loading, setLoading] = useState(false); // State for managing loading state
+  const [message, setMessage] = useState(''); // State for user feedback
 
   const handleDownload = async () => {
-    // Set loading to true when starting the download
     setLoading(true);
+    setMessage('');
 
-    // Send a request to your backend API to initiate the download
     try {
-      await axios.post('/api/download', {
+      const response = await axios.post('/api/download', {
         videoLink,
         resolution: selectedOption === 'audio' ? undefined : selectedOption,
+        format: selectedOption === 'audio' ? format : undefined,
+      }, {
+        responseType: 'blob', // Important for handling binary data
       });
-      // Handle success
-      console.log('Download initiated');
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+
+      const contentDisposition = response.headers['content-disposition'];
+      let fileName = 'downloaded_video';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?(.+)"?/);
+        if (match.length > 1) {
+          fileName = match[1];
+        }
+      }
+
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setMessage('Download initiated successfully!');
     } catch (error) {
-      // Handle error
-      console.error('Error initiating download:', error);
+      setMessage('Error initiating download. Please try again.');
     } finally {
-      // Set loading to false after receiving the response (whether success or error)
       setLoading(false);
     }
   };
@@ -52,7 +71,6 @@ const VideoDownloaderPage = () => {
         <option value="720">720p</option>
         <option value="1080">1080p</option>
         <option value="2160">4K</option>
-        {/* Add other resolutions or audio formats if needed */}
       </select>
       {selectedOption === 'audio' && (
         <select
@@ -63,19 +81,23 @@ const VideoDownloaderPage = () => {
           <option value="">Select audio format</option>
           <option value="mp3">MP3</option>
           <option value="wav">WAV</option>
-          {/* Add other audio formats if needed */}
         </select>
       )}
-      {/* Display loader when loading state is true */}
       {loading ? (
         <div className="mt-4 text-center">Loading...</div>
       ) : (
         <button
           onClick={handleDownload}
           className="bg-blue-500 text-white p-4 md:p-2 mt-4 rounded-lg"
+          disabled={!videoLink || !selectedOption || (selectedOption === 'audio' && !format)}
         >
           Download
         </button>
+      )}
+      {message && (
+        <div className="mt-4 text-center">
+          {message}
+        </div>
       )}
     </div>
   );
